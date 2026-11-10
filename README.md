@@ -12,6 +12,185 @@ Ubuntu 24.04에서 설치와 빌드를 완료한 후, 경기를 다시 실행하
 - HELIOS Base: 기본 축구팀 프로그램
 
 작업 폴더: `~/robocup`
+## 최초 설치 방법
+
+아래 과정은 Ubuntu 24.04에서 처음 한 번만 진행합니다.
+이미 설치한 PC에서는 아래의 경기 실행 방법부터 진행하면 됩니다.
+
+각 명령어는 순서대로 실행합니다.
+중간에 오류가 발생하면 다음 단계로 넘어가지 않고 먼저 오류를 해결합니다.
+
+### 1. 개발 도구 및 라이브러리 설치
+
+```bash
+sudo apt update
+sudo apt install build-essential git cmake automake autoconf libtool flex bison libboost-all-dev
+```
+
+모니터에 필요한 라이브러리도 설치합니다.
+
+```bash
+sudo apt install qtbase5-dev qt5-qmake libfontconfig1-dev libaudio-dev libxt-dev libglib2.0-dev libxi-dev libxrender-dev
+```
+
+설치한 개발 도구의 버전을 확인합니다.
+
+```bash
+g++ --version
+cmake --version
+git --version
+```
+
+### 2. 작업 폴더 생성
+
+```bash
+mkdir -p ~/robocup
+cd ~/robocup
+```
+
+### 3. 경기 서버 설치 — rcssserver
+
+공식 저장소에서 소스 코드를 다운로드합니다.
+
+```bash
+cd ~/robocup
+git clone https://github.com/rcsoccersim/rcssserver.git
+cd rcssserver
+```
+
+빌드 설정과 빌드를 진행합니다.
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j2
+```
+
+빌드가 성공하면 설치하고 공유 라이브러리 정보를 갱신합니다.
+
+```bash
+sudo cmake --install build
+sudo ldconfig
+```
+
+### 4. 경기 모니터 설치 — rcssmonitor
+
+```bash
+cd ~/robocup
+git clone https://github.com/rcsoccersim/rcssmonitor.git
+cd rcssmonitor
+```
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j2
+```
+
+```bash
+sudo cmake --install build
+sudo ldconfig
+```
+
+모니터 설치 후에도 `sudo ldconfig`를 실행합니다.
+생략하면 실행 시 `librcssrcg.so.18`을 찾지 못하는 오류가 발생할 수 있습니다.
+
+### 5. 선수 AI 라이브러리 설치 — librcsc
+
+```bash
+cd ~/robocup
+git clone https://github.com/helios-base/librcsc.git
+cd librcsc
+```
+
+빌드 준비와 빌드를 진행합니다.
+
+```bash
+./bootstrap
+./configure --disable-unit-test
+make -j2
+```
+
+빌드가 성공하면 설치합니다.
+
+```bash
+sudo make install
+sudo ldconfig
+```
+
+공유 라이브러리 등록 여부를 확인합니다.
+
+```bash
+ldconfig -p | grep librcsc
+```
+
+오늘 설치한 환경에서는 다음 경로가 확인되었습니다.
+
+```text
+/usr/local/lib/librcsc.so.20
+/usr/local/lib/librcsc.so
+```
+
+라이브러리 버전에 따라 숫자는 달라질 수 있습니다.
+
+### 6. 기본 축구팀 설치 — HELIOS Base
+
+```bash
+cd ~/robocup
+git clone https://github.com/helios-base/helios-base.git
+cd helios-base
+```
+
+설치한 librcsc의 위치를 지정하고 빌드합니다.
+
+```bash
+./bootstrap
+./configure --with-librcsc=/usr/local
+make -j2
+```
+
+실행 파일과 시작 스크립트를 확인합니다.
+
+```bash
+ls -l src/sample_player src/sample_coach src/start.sh
+```
+
+이 안내에서는 별도의 `sudo make install` 없이
+`~/robocup/helios-base/src`에서 팀을 실행합니다.
+
+### 7. 설치 완료 후 확인
+
+아래의 경기 실행 방법에 따라 다음을 순서대로 실행합니다.
+
+1. 경기 서버
+2. 경기 모니터
+3. TeamA와 TeamB
+4. 모니터에서 Referee → Kick Off
+
+두 팀의 선수들이 움직이면 기본 환경 구성이 완료된 것입니다.
+
+### 설치 기록
+
+2026년 11월 10일, 동아리 PC에서 확인한 환경입니다.
+
+| 항목 | 확인 내용 |
+|---|---|
+| 운영체제 | Ubuntu 24.04 |
+| C++ 컴파일러 | GCC 13.3.0 |
+| CMake | 3.28.3 |
+| Git | 2.43.0 |
+| 경기 서버 | rcssserver 19.0.0 |
+| 경기 모니터 | rcssmonitor 19.0.1 |
+| 선수 라이브러리 | librcsc 설치 및 등록 확인 |
+| 기본 팀 | HELIOS Base 빌드 완료 |
+| 동작 확인 | TeamA와 TeamB의 경기 실행 성공 |
+
+위 명령어는 다운로드 시점의 기본 브랜치를 사용합니다.
+나중에 저장소가 업데이트되면 버전이나 빌드 결과가 달라질 수 있습니다.
+
+---
+
+## 설치 후 경기 실행
+
+이후부터는 설치를 반복하지 않고 아래 순서로 실행합니다.
 
 ## 1. 경기 서버 실행 — 터미널 1
 
